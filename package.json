@@ -1,5 +1,5 @@
 {
-  "name": "heroicons-svelte",
+  "name": "@xylightdev/svelte-hero-icons",
   "version": "2.2.0",
   "description": "A version of svelte-hero-icons that is tree-shakeable, while keeping the same syntax",
   "repository": {
@@ -16,6 +16,10 @@
       "types": "./dist/index.d.ts"
     }
   },
+  "files": [
+    "dist/**/*",
+    "package.json"
+  ],
   "sideEffects": false,
   "type": "module",
   "devDependencies": {
