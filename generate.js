@@ -128,14 +128,12 @@ function generateIcons() {
         const sizeStr = String(iconSize);
 
         processed = processed
-        .replace(/ width="[^"]*"/g, \`width="\${sizeStr}"\`)
-        .replace(/ height="[^"]*"/g, \`height="\${sizeStr}"\`)
-        .replace(/ width='[^']*'/g, \`width="\${sizeStr}"\`)
-        .replace(/ height='[^']*'/g, \`height="\${sizeStr}"\`)
-        .replace(/ width=\d+/g, \`width="\${sizeStr}"\`)
-        .replace(/ height=\d+/g, \`height="\${sizeStr}"\`);
+        .replace(/ width="[^"]*"/g, \` width="\${sizeStr}"\`)
+        .replace(/ height="[^"]*"/g, \` height="\${sizeStr}"\`)
+        .replace(/ width=\d+/g, \` width="\${sizeStr}"\`)
+        .replace(/ height=\d+/g, \` height="\${sizeStr}"\`);
 
-        if (!processed.includes('width=') && !processed.includes('height=')) {
+        if (!processed.includes(' width=') && !processed.includes(' height=')) {
             processed = processed.replace('<svg', \`<svg width="\${sizeStr}" height="\${sizeStr}"\`);
         }
 
