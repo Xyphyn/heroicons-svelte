@@ -200,6 +200,7 @@ export interface IconProps {
     class?: string;
     style?: string;
 }
+export type IconSource = IconVariants;
 export declare const Icon: import('svelte').Component<IconProps>;
 // Icon exports
     `;
