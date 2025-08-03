@@ -1,0 +1,27 @@
+{
+  "name": "heroicons-svelte",
+  "version": "2.2.0",
+  "description": "A version of svelte-hero-icons that is tree-shakeable, while keeping the same syntax",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Xyphyn/heroicons-svelte.git"
+  },
+  "license": "GPL-3.0",
+  "author": "James Xylight <james@xylight.dev>",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "sideEffects": false,
+  "type": "module",
+  "devDependencies": {
+    "heroicons": "^2.2.0"
+  },
+  "scripts": {
+    "generate": "node generate.js"
+  }
+}
