@@ -24,6 +24,50 @@ function toPascalCase(str) {
     .join('');
 }
 
+function parseSvgContent(filePath) {
+    let content = fs.readFileSync(filePath, 'utf8');
+
+    // Remove XML declaration and comments
+    content = content
+    .replace(/<\?xml[^>]*\?>/g, '')
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .trim();
+
+    // Extract SVG attributes
+    const svgMatch = content.match(/<svg([^>]*)>/);
+    if (!svgMatch) return null;
+
+    const svgAttributes = {};
+    const attributeMatches = svgMatch[1].matchAll(/(\w+(?:-\w+)*)="([^"]*)"/g);
+
+    for (const match of attributeMatches) {
+        if (match[1] == "xmlns" || match[1] == "aria-hidden" || match[1] == "data-slot") continue
+        svgAttributes[match[1]] = match[2];
+    }
+
+    // Extract path elements
+    const pathElements = [];
+    const pathMatches = content.matchAll(/<path([^>]*)\/?>/g);
+
+    for (const match of pathMatches) {
+        const pathAttributes = {};
+        const pathAttributeMatches = match[1].matchAll(/(\w+(?:-\w+)*)="([^"]*)"/g);
+
+        for (const attrMatch of pathAttributeMatches) {
+            pathAttributes[attrMatch[1]] = attrMatch[2];
+        }
+
+        if (Object.keys(pathAttributes).length > 0) {
+            pathElements.push(pathAttributes);
+        }
+    }
+
+    return {
+        a: svgAttributes,
+        path: pathElements
+    };
+}
+
 function readSvgContent(filePath) {
     let content = fs.readFileSync(filePath, 'utf8');
 
@@ -59,7 +103,7 @@ function generateIcons() {
         }
 
         const variants = fs.readdirSync(sizePath).filter(item =>
-        fs.statSync(path.join(sizePath, item)).isDirectory()
+            fs.statSync(path.join(sizePath, item)).isDirectory()
         );
 
         variants.forEach(variant => {
@@ -81,8 +125,14 @@ function generateIcons() {
                 const iconName = path.basename(svgFile, '.svg');
                 const pascalName = toPascalCase(iconName);
                 const svgPath = path.join(variantPath, svgFile);
-                const svgContent = readSvgContent(svgPath);
+                const parsedSvg = parseSvgContent(svgPath);
 
+                if (!parsedSvg) {
+                    console.warn(`⚠️  Failed to parse ${svgFile}, skipping...`);
+                    return;
+                }
+
+                // Initialize icon object if it doesn't exist
                 if (!iconMap.has(pascalName)) {
                     iconMap.set(pascalName, {
                         name: pascalName,
@@ -90,7 +140,8 @@ function generateIcons() {
                     });
                 }
 
-                iconMap.get(pascalName).variants[variantName] = svgContent;
+                // Add this variant
+                iconMap.get(pascalName).variants[variantName] = parsedSvg;
             });
         });
     });
@@ -116,61 +167,20 @@ function generateIcons() {
     solid ? 'solid' :
     'outline');
 
-    let svgContent = $derived(src?.[selectedVariant] || src?.outline || '');
+    let icon = $derived(src?.[selectedVariant] || src?.outline || {});
 
-    let processedSvg = $derived(processSvg(svgContent, size, className, style));
-
-    function processSvg(svg, iconSize, classes, styles) {
-        if (!svg) return '';
-
-        let processed = svg;
-
-        const sizeStr = String(iconSize);
-
-        processed = processed
-        .replace(/ width="[^"]*"/g, \` width="\${sizeStr}"\`)
-        .replace(/ height="[^"]*"/g, \` height="\${sizeStr}"\`)
-        .replace(/ width=\d+/g, \` width="\${sizeStr}"\`)
-        .replace(/ height=\d+/g, \` height="\${sizeStr}"\`);
-
-        if (!processed.includes(' width=') && !processed.includes(' height=')) {
-            processed = processed.replace('<svg', \`<svg width="\${sizeStr}" height="\${sizeStr}"\`);
-        }
-
-        if (classes) {
-            if (processed.includes('class="')) {
-                processed = processed.replace(/class="([^"]*)"/, \`class="$1 \${classes}"\`);
-            } else {
-                processed = processed.replace('<svg', \`<svg class="\${classes}"\`);
-            }
-        }
-
-        if (styles) {
-            if (processed.includes('style="')) {
-                processed = processed.replace(/style="([^"]*)"/, \`style="$1; \${styles}"\`);
-            } else {
-                processed = processed.replace('<svg', \`<svg style="\${styles}"\`);
-            }
-        }
-
-        return processed;
-    }
-
+    let svgAttributes = icon ? {
+        ...icon.a,
+        ...(className && { class: className }),
+        ...(style && { style })
+    } : {};
 </script>
 
-{@html processedSvg}
-
-<style>
-    :global(.icon) {
-        display: inline-block;
-        vertical-align: middle;
-        flex-shrink: 0;
-    }
-
-    :global(.icon svg) {
-        display: block;
-    }
-</style>`;
+<svg {...svgAttributes} xmlns="http://www.w3.org/2000/svg" width={size} height={size} aria-hidden="true" {...rest}>
+    {#each icon?.path ?? [] as a}
+        <path {...a} />
+    {/each}
+</svg>`;
 
     fs.writeFileSync(path.join(OUTPUT_DIR, 'Icon.svelte'), iconComponentContent);
 
@@ -197,7 +207,7 @@ export interface IconProps {
     micro?: boolean;
     solid?: boolean;
     variant?: 'outline' | 'solid' | 'mini' | 'micro';
-    class?: string;
+    class?: ClassValue;
     style?: string;
 }
 export type IconSource = IconVariants;

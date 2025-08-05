@@ -27,5 +27,8 @@
   },
   "scripts": {
     "generate": "node generate.js"
+  },
+  "peerDependencies": {
+    "svelte": "^5.0.0"
   }
 }
